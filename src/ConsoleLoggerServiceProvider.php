@@ -40,10 +40,10 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
 
         $app->extend('monolog', function (Logger $monolog, Container $app) {
             $consoleHandler = new ConsoleHandler($app['console.output']);
-            $consoleHandler->setFormatter(new ConsoleFormatter([
+            $consoleHandler->setFormatter(new ConsoleFormatter(array(
                 'format' => $app['logger.console_format'],
                 'date_format' => $app['logger.console_date_format'],
-            ]));
+            )));
             $monolog->pushHandler($consoleHandler);
 
             return $monolog;
