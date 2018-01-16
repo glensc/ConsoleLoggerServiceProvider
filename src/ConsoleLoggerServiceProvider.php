@@ -26,8 +26,6 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
             return new ArgvInput();
         };
 
-        $app['logger.console_format'] = "%start_tag%%level_name%:%end_tag% %message%\n";
-
         $app['monolog.handler'] = function () use ($app) {
             $logfile = $app->offsetExists('monolog.console_logfile')
                 ? $app['monolog.console_logfile']
