@@ -31,3 +31,24 @@ are logging.
 The console logger overrides the default `monolog.handler` in order to allow setting
 a custom log file. If defined, it will use `monolog.console_logfile`, and if not, it
 will fall back to `monolog.logfile`.
+
+The minimum logging level at which this handler will be triggered depends on the
+verbosity setting of the console output. The default mapping is:
+ - `OutputInterface::VERBOSITY_NORMAL` will show all `WARNING` and higher logs
+ - `OutputInterface::VERBOSITY_VERBOSE` (`-v`) will show all `NOTICE` and higher logs
+ - `OutputInterface::VERBOSITY_VERY_VERBOSE` (`-vv`) will show all `INFO` and higher logs
+ - `OutputInterface::VERBOSITY_DEBUG` (`-vvv`) will show all DEBUG and higher logs, i.e. all logs
+ 
+This mapping can be customized with the `logger.console_logger.handler.verbosity_level_map` constructor parameter:
+
+```php
+$app->register(new ConsoleLoggerServiceProvider(), [
+    'logger.console_logger.handler.verbosity_level_map' => array(
+        OutputInterface::VERBOSITY_QUIET => Logger::ERROR,
+        OutputInterface::VERBOSITY_NORMAL => Logger::INFO,
+        OutputInterface::VERBOSITY_VERBOSE => Logger::NOTICE,
+        OutputInterface::VERBOSITY_VERY_VERBOSE => Logger::INFO,
+        OutputInterface::VERBOSITY_DEBUG => Logger::DEBUG,
+    ),
+]);
+```
