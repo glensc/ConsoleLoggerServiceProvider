@@ -27,22 +27,32 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
         };
 
         $app['monolog.handler'] = function () use ($app) {
-            $logfile = $app->offsetExists('monolog.console_logfile')
+            $logfile = isset($app['monolog.console_logfile'])
                 ? $app['monolog.console_logfile']
                 : $app['monolog.logfile'];
             return new StreamHandler($logfile, $app['monolog.level']);
         };
 
-        $app['logger.console_format'] = "%datetime% %start_tag%%level_name%%end_tag% <comment>[%channel%]</> %message%%context%%extra%\n";
-        $app['logger.console_date_format'] = "H:i:s";
+        $app['logger.console_logger.handler.bubble'] = true;
+        $app['logger.console_logger.handler.verbosity_level_map'] = array();
+        $app['logger.console_logger.handler'] = function ($app) {
+            $consoleHandler = new ConsoleHandler(
+                $app['console.output'],
+                $app['logger.console_logger.handler.bubble'],
+                $app['logger.console_logger.handler.verbosity_level_map']
+            );
+            $consoleHandler->setFormatter($app['logger.console_logger.formatter']);
+
+            return $consoleHandler;
+        };
+
+        $app['logger.console_logger.formatter.options'] = array();
+        $app['logger.console_logger.formatter'] = function ($app) {
+            return new ConsoleFormatter($app['logger.console_logger.formatter.options']);
+        };
 
         $app->extend('monolog', function (Logger $monolog, Container $app) {
-            $consoleHandler = new ConsoleHandler($app['console.output']);
-            $consoleHandler->setFormatter(new ConsoleFormatter(array(
-                'format' => $app['logger.console_format'],
-                'date_format' => $app['logger.console_date_format'],
-            )));
-            $monolog->pushHandler($consoleHandler);
+            $monolog->pushHandler($app['logger.console_logger.handler']);
 
             return $monolog;
         });
