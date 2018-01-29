@@ -7,7 +7,7 @@ requires version >=2.4 of Symfony Components. More info about the change is at t
 
 In your console application, you can now do something like this:
 
-````PHP
+```php
 use Symfony\Component\Console\Application;
 
 $app = require 'app.php';
@@ -22,7 +22,7 @@ $console->addCommands(
 );
 
 $console->run($app['console.input'], $app['console.output']);
-````
+```
 
 You will still use the normal `OutputInterface` instance for command feedback
 in your commands, but you will now also get output from anything your services
@@ -38,7 +38,7 @@ verbosity setting of the console output. The default mapping is:
  - `OutputInterface::VERBOSITY_VERBOSE` (`-v`) will show all `NOTICE` and higher logs
  - `OutputInterface::VERBOSITY_VERY_VERBOSE` (`-vv`) will show all `INFO` and higher logs
  - `OutputInterface::VERBOSITY_DEBUG` (`-vvv`) will show all DEBUG and higher logs, i.e. all logs
- 
+
 This mapping can be customized with the `logger.console_logger.handler.verbosity_level_map` constructor parameter:
 
 ```php
