@@ -28,10 +28,6 @@ You will still use the normal `OutputInterface` instance for command feedback
 in your commands, but you will now also get output from anything your services
 are logging.
 
-The console logger overrides the default `monolog.handler` in order to allow setting
-a custom log file. If defined, it will use `monolog.console_logfile`, and if not, it
-will fall back to `monolog.logfile`.
-
 The minimum logging level at which this handler will be triggered depends on the
 verbosity setting of the console output. The default mapping is:
  - `OutputInterface::VERBOSITY_NORMAL` will show all `WARNING` and higher logs

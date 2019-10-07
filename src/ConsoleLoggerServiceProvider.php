@@ -26,13 +26,6 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
             return new ArgvInput();
         };
 
-        $app['monolog.handler'] = function () use ($app) {
-            $logfile = isset($app['monolog.console_logfile'])
-                ? $app['monolog.console_logfile']
-                : $app['monolog.logfile'];
-            return new StreamHandler($logfile, $app['monolog.level']);
-        };
-
         $app['logger.console_logger.handler.bubble'] = true;
         $app['logger.console_logger.handler.verbosity_level_map'] = array();
         $app['logger.console_logger.handler'] = function ($app) {
