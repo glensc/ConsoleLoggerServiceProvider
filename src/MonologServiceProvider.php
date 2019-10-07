@@ -1,36 +1,21 @@
 <?php
 
-/*
- * This file is part of the Silex framework.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+namespace glen\ConsoleLoggerServiceProvider;
 
-namespace Silex\Provider;
-
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler;
+use Monolog\Logger;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Logger;
-use Monolog\Handler;
-use Monolog\ErrorHandler;
-use Silex\Application;
-use Silex\Api\BootableProviderInterface;
-use Silex\Api\EventListenerProviderInterface;
 use Symfony\Bridge\Monolog\Handler\FingersCrossed\NotFoundActivationStrategy;
 use Symfony\Bridge\Monolog\Processor\DebugProcessor;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Silex\EventListener\LogListener;
 
 /**
  * Monolog Provider.
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-class MonologServiceProvider implements ServiceProviderInterface, BootableProviderInterface, EventListenerProviderInterface
+class MonologServiceProvider implements ServiceProviderInterface
 {
     public function register(Container $app)
     {
@@ -43,7 +28,7 @@ class MonologServiceProvider implements ServiceProviderInterface, BootableProvid
                 $app['monolog.not_found_activation_strategy'] = function () use ($app) {
                     $level = MonologServiceProvider::translateLevel($app['monolog.level']);
 
-                    return new NotFoundActivationStrategy($app['request_stack'], ['^/'], $level);
+                    return new NotFoundActivationStrategy($app['request_stack'], array('^/'), $level);
                 };
             }
         }
@@ -51,6 +36,7 @@ class MonologServiceProvider implements ServiceProviderInterface, BootableProvid
         $app['monolog.logger.class'] = $bridge ? 'Symfony\Bridge\Monolog\Logger' : 'Monolog\Logger';
 
         $app['monolog'] = function ($app) use ($bridge) {
+            /** @var \Monolog\Logger $log */
             $log = new $app['monolog.logger.class']($app['monolog.name']);
 
             $handler = new Handler\GroupHandler($app['monolog.handlers']);
@@ -60,7 +46,9 @@ class MonologServiceProvider implements ServiceProviderInterface, BootableProvid
 
             $log->pushHandler($handler);
 
-            if ($app['debug'] && $bridge) {
+            // DebugProcessor appears in Symfony 3.2
+            // https://github.com/symfony/monolog-bridge/blob/3.2/Processor/DebugProcessor.php
+            if ($bridge && isset($app['debug']) && $app['debug'] && class_exists('\Symfony\Bridge\Monolog\Processor\DebugProcessor')) {
                 $log->pushProcessor(new DebugProcessor());
             }
 
@@ -74,14 +62,19 @@ class MonologServiceProvider implements ServiceProviderInterface, BootableProvid
         $app['monolog.handler'] = $defaultHandler = function () use ($app) {
             $level = MonologServiceProvider::translateLevel($app['monolog.level']);
 
-            $handler = new Handler\StreamHandler($app['monolog.logfile'], $level, $app['monolog.bubble'], $app['monolog.permission']);
+            if (isset($app['monolog.logfile'])) {
+                $handler = new Handler\StreamHandler($app['monolog.logfile'], $level, $app['monolog.bubble'], $app['monolog.permission']);
+            } else {
+                $handler = new Handler\ErrorLogHandler(Handler\ErrorLogHandler::OPERATING_SYSTEM, $level, $app['monolog.bubble']);
+            }
+
             $handler->setFormatter($app['monolog.formatter']);
 
             return $handler;
         };
 
         $app['monolog.handlers'] = function () use ($app, $defaultHandler) {
-            $handlers = [];
+            $handlers = array();
 
             // enables the default handler if a logfile was set or the monolog.handler service was redefined
             if ($app['monolog.logfile'] || $defaultHandler !== $app->raw('monolog.handler')) {
@@ -95,32 +88,10 @@ class MonologServiceProvider implements ServiceProviderInterface, BootableProvid
             return Logger::DEBUG;
         };
 
-        $app['monolog.listener'] = function () use ($app) {
-            return new LogListener($app['logger'], $app['monolog.exception.logger_filter']);
-        };
-
         $app['monolog.name'] = 'app';
         $app['monolog.bubble'] = true;
         $app['monolog.permission'] = null;
-        $app['monolog.exception.logger_filter'] = null;
         $app['monolog.logfile'] = null;
-        $app['monolog.use_error_handler'] = function ($app) {
-            return !$app['debug'];
-        };
-    }
-
-    public function boot(Application $app)
-    {
-        if ($app['monolog.use_error_handler']) {
-            ErrorHandler::register($app['monolog']);
-        }
-    }
-
-    public function subscribe(Container $app, EventDispatcherInterface $dispatcher)
-    {
-        if (isset($app['monolog.listener'])) {
-            $dispatcher->addSubscriber($app['monolog.listener']);
-        }
     }
 
     public static function translateLevel($name)
