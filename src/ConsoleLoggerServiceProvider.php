@@ -39,7 +39,9 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
         };
 
         $app['logger.console_logger.formatter.options'] = function ($app) {
-            $options = array();
+            $options = array(
+                'colors' => $app['console.output']->isDecorated(),
+            );
 
             $keys = array(
                 'format',
