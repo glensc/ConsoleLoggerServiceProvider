@@ -2,7 +2,6 @@
 
 namespace glen\ConsoleLoggerServiceProvider;
 
-use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
@@ -14,7 +13,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class ConsoleLoggerServiceProvider implements ServiceProviderInterface
 {
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function register(Container $app)
     {
@@ -39,7 +38,27 @@ class ConsoleLoggerServiceProvider implements ServiceProviderInterface
             return $consoleHandler;
         };
 
-        $app['logger.console_logger.formatter.options'] = array();
+        $app['logger.console_logger.formatter.options'] = function ($app) {
+            $options = array(
+                'colors' => $app['console.output']->isDecorated(),
+            );
+
+            $keys = array(
+                'format',
+                'date_format',
+                'colors',
+                'multiline',
+                'ignore_empty_context_and_extra',
+            );
+            foreach ($keys as $key) {
+                if (isset($app["logger.console_logger.formatter.$key"])) {
+                    $options[$key] = $app["logger.console_logger.formatter.$key"];
+                }
+            }
+
+            return $options;
+        };
+
         $app['logger.console_logger.formatter'] = function ($app) {
             return new ConsoleFormatter($app['logger.console_logger.formatter.options']);
         };
